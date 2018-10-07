@@ -78,7 +78,7 @@ const resolveStock = async (_, { ticker }, context, info) => {
     ...companyInfo,
     ticker: ticker.toUpperCase(),
     financials: financialReportLoader.load(ticker),
-    sector: (_, args, context) =>
+    sector: (_, args, context, info) =>
       resolveSector(_, { sectorName: companyInfo.sector }, context, info),
     peers: resolvePeers
   };
