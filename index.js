@@ -1,13 +1,32 @@
-const { ApolloServer, gql } = require("apollo-server");
+const express = require("express");
+const { ApolloServer, gql } = require("apollo-server-express");
+
+const PORT = process.env.PORT || 4000;
 
 const {
   createCompanyInfoLoader,
   createFinancialReportLoader,
   createPeersLoader,
-  createSectorQuotesLoader
+  createSectorQuotesLoader,
+  createEarningsLoader,
+  createStockStatsLoader
 } = require("./services/iex");
 
 const typeDefs = gql`
+  enum SectorName {
+    UTILITIES
+    REAL_ESTATE
+    ENERGY
+    HEALTHCARE
+    FINANCIAL_SERVICES
+    INDUSTRIALS
+    CONSUMER_CYCLICAL
+    COMMUNICATION_SERVICES
+    CONSUMER_DEFENSIVE
+    TECHNOLOGY
+    BASIC_MATERIALS
+  }
+
   type FinancialReport {
     reportDate: String
     grossProfit: Float
@@ -31,8 +50,23 @@ const typeDefs = gql`
     operatingGainsLosses: Float
   }
 
-  type Stock {
-    ticker: String
+  type Earning {
+    actualEPS: Float
+    consensusEPS: Float
+    estimatedEPS: Float
+    announceTime: String
+    numberOfEstimates: Int
+    EPSSurpriseDollar: Float
+    EPSReportDate: String
+    fiscalPeriod: String
+    fiscalEndDate: String
+    yearAgo: Float
+    yearAgoChangePercent: Float
+    estimatedChangePercent: Float
+    symbolId: ID
+  }
+
+  type CompanyInfo {
     companyName: String
     exchange: String
     industry: String
@@ -40,10 +74,70 @@ const typeDefs = gql`
     description: String
     CEO: String
     issueType: String
-    sector: Sector
+    sector: String
     tags: [String]
-    financials: [FinancialReport]
+  }
+
+  type StockKeyStats {
+    companyName: String
+    marketcap: Float
+    beta: Float
+    week52high: Float
+    week52low: Float
+    week52change: Float
+    shortInterest: Float
+    shortDate: String
+    dividendRate: Float
+    dividendYield: Float
+    exDividendDate: String
+    latestEPS: Float
+    latestEPSDate: String
+    sharesOutstanding: Float
+    float: Float
+    returnOnEquity: Float
+    consensusEPS: Float
+    numberOfEstimates: Int
+    symbol: String
+    EBITDA: Float
+    revenue: Float
+    grossProfit: Float
+    cash: Float
+    debt: Float
+    ttmEPS: Float
+    revenuePerShare: Float
+    revenuePerEmployee: Float
+    peRatioHigh: Float
+    peRatioLow: Float
+    EPSSurpriseDollar: Float
+    EPSSurprisePercent: Float
+    returnOnAssets: Float
+    returnOnCapital: Float
+    profitMargin: Float
+    priceToSales: Float
+    priceToBook: Float
+    day200MovingAvg: Float
+    day50MovingAvg: Float
+    institutionPercent: Float
+    insiderPercent: Float
+    shortRatio: Float
+    year5ChangePercent: Float
+    year2ChangePercent: Float
+    year1ChangePercent: Float
+    ytdChangePercent: Float
+    month6ChangePercent: Float
+    month3ChangePercent: Float
+    month1ChangePercent: Float
+    day5ChangePercent: Float
+  }
+
+  type Stock {
+    ticker: String
+    companyInfo: CompanyInfo
+    keyStats: StockKeyStats
     peers: [Stock]
+    financials: [FinancialReport]
+    earnings: [Earning]
+    sector: Sector
   }
 
   type Sector {
@@ -53,38 +147,73 @@ const typeDefs = gql`
 
   type Query {
     stock(ticker: String!): Stock
-    sector(sectorName: String!): Sector
+    sector(sectorName: SectorName!): Sector
   }
 `;
 
+const toGqlSectorName = sectorName =>
+  sectorName
+    .split(" ")
+    .join("_")
+    .toUpperCase();
+
+const resolveEarnings = (_, { ticker }, context, info) => {
+  return context.loaders.earningsLoader.load(ticker);
+};
+
 const resolveSector = (_, { sectorName }, context, info) => ({
-  key: sectorName,
-  constituents: async ({ first, offset }, context) =>
+  key: toGqlSectorName(sectorName),
+  constituents: async ({ offset, first }, context) =>
     (await context.loaders.sectorQuotesLoader.load(sectorName))
-      .slice(offset, first)
+      .slice(offset, offset + first)
       .map(({ symbol }) => resolveStock(_, { ticker: symbol }, context, info))
 });
 
 const resolveStock = async (_, { ticker }, context, info) => {
   const {
-    loaders: { companyInfoLoader, financialReportLoader, peersLoader }
+    loaders: {
+      companyInfoLoader,
+      financialReportLoader,
+      peersLoader,
+      keyStatsLoader
+    }
   } = context;
-  const companyInfo = await companyInfoLoader.load(ticker);
   const resolvePeers = async () =>
     (await peersLoader.load(ticker)).map(ticker =>
       resolveStock(_, { ticker }, context, info)
     );
   return {
-    ...companyInfo,
-    ticker: ticker.toUpperCase(),
-    financials: financialReportLoader.load(ticker),
-    sector: (_, args, context, info) =>
-      resolveSector(_, { sectorName: companyInfo.sector }, context, info),
-    peers: resolvePeers
+    ticker: () => ticker.toUpperCase(),
+    companyInfo: () => companyInfoLoader.load(ticker),
+    financials: () => financialReportLoader.load(ticker),
+    sector: async (args, context, info) =>
+      resolveSector(
+        _,
+        { sectorName: (await companyInfoLoader.load(ticker)).sector },
+        context,
+        info
+      ),
+    peers: resolvePeers,
+    earnings: (args, context, info) =>
+      resolveEarnings(_, { ticker }, context, info),
+    keyStats: () => keyStatsLoader.load(ticker)
   };
 };
 
 const resolvers = {
+  SectorName: {
+    UTILITIES: "Utilities",
+    REAL_ESTATE: "Real Estate",
+    ENERGY: "Energy",
+    HEALTHCARE: "Healthcare",
+    FINANCIAL_SERVICES: "Financial Services",
+    INDUSTRIALS: "Industrials",
+    CONSUMER_CYCLICAL: "Consumer Cyclical",
+    COMMUNICATION_SERVICES: "Communication Services",
+    CONSUMER_DEFENSIVE: "Consumer Defensive",
+    TECHNOLOGY: "Technology",
+    BASIC_MATERIALS: "Basic Materials"
+  },
   Query: {
     stock: resolveStock,
     sector: resolveSector
@@ -99,11 +228,16 @@ const server = new ApolloServer({
       companyInfoLoader: createCompanyInfoLoader(),
       financialReportLoader: createFinancialReportLoader(),
       peersLoader: createPeersLoader(),
-      sectorQuotesLoader: createSectorQuotesLoader()
+      sectorQuotesLoader: createSectorQuotesLoader(),
+      earningsLoader: createEarningsLoader(),
+      keyStatsLoader: createStockStatsLoader()
     }
   })
 });
 
-server.listen().then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`);
+const app = express();
+
+server.applyMiddleware({ app });
+app.listen(PORT, () => {
+  console.log(`🚀  Server ready at http://localhost:${PORT}`);
 });

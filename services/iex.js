@@ -65,9 +65,31 @@ const createSectorQuotesLoader = () =>
     )
   );
 
+const createEarningsLoader = () =>
+  new DataLoader(tickers =>
+    Promise.all(
+      tickers.map(ticker =>
+        iexFetch(`${IEX_URL}/stock/${ticker}/earnings`)
+          .then(res => res.json())
+          .then(({ earnings }) => earnings)
+      )
+    )
+  );
+
+const createStockStatsLoader = () =>
+  new DataLoader(tickers =>
+    Promise.all(
+      tickers.map(ticker =>
+        iexFetch(`${IEX_URL}/stock/${ticker}/stats`).then(res => res.json())
+      )
+    )
+  );
+
 module.exports = {
   createCompanyInfoLoader,
   createFinancialReportLoader,
   createPeersLoader,
-  createSectorQuotesLoader
+  createSectorQuotesLoader,
+  createEarningsLoader,
+  createStockStatsLoader
 };
