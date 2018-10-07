@@ -1,0 +1,23 @@
+{
+  "name": "iex-gql",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^2.1.0",
+    "async-retry": "^1.2.3",
+    "async-sema": "^2.1.4",
+    "dataloader": "^1.4.0",
+    "graphql": "^14.0.2",
+    "graphql-tools": "^4.0.0",
+    "isomorphic-fetch": "^2.2.1",
+    "lodash": "^4.17.11",
+    "nodemon": "^1.18.4"
+  }
+}
