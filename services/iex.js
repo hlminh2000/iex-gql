@@ -5,13 +5,19 @@ const DataLoader = require("dataloader");
 
 const IEX_URL = `https://api.iextrading.com/1.0`;
 
-const iexRateLimit = RateLimit(100);
+const iexRateLimit = RateLimit(50);
 
 const iexFetch = async (...args) => {
+  const url = args[0];
+  const fetchId = `${url}_${Math.random()}`;
+  console.time(fetchId);
   return retry(
     async bail => {
       await iexRateLimit();
-      return fetch(...args);
+      return fetch(...args).then(res => {
+        console.timeEnd(fetchId);
+        return res;
+      });
     },
     { retries: 5 }
   );
