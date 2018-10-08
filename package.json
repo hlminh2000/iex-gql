@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
-    "dev-proxy": "nodemon ./services/iexProxy.js",
-    "start-proxy": "node ./services/iexProxy.js",
+    "dev-proxy": "nodemon ./services/iex/proxy.js",
+    "start-proxy": "node ./services/iex/proxy.js",
     "start": "npm run start-proxy"
   },
   "author": "",

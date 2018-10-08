@@ -252,8 +252,7 @@ const createServer = ({ gqlPath, formatResponse = res => res }) =>
       res.data = transform(res.data);
       console.timeEnd("transform");
       return formatResponse(res);
-    },
-    tracing: true
+    }
   });
 
 module.exports = createServer;
