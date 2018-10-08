@@ -4,17 +4,21 @@ const retry = require("async-retry");
 const DataLoader = require("dataloader");
 
 const IEX_URL = `https://api.iextrading.com/1.0`;
+const IEX_PROXY = process.env.IEX_PROXY || `http://localhost:5000`;
 
 const iexRateLimit = RateLimit(50);
 
-const iexFetch = async (...args) => {
-  const url = args[0];
-  const fetchId = `${url}_${Math.random()}`;
+const coinFlip = () => Math.random() > 0.5;
+
+const iexFetch = async (url, ...args) => {
+  const usingProxy = coinFlip();
+  const fetchUrl = !usingProxy ? url : url.split(IEX_URL).join(IEX_PROXY);
+  const fetchId = `${url}_${Math.random()}${usingProxy ? "_PROXY" : ""}`;
   console.time(fetchId);
   return retry(
     async bail => {
       await iexRateLimit();
-      return fetch(...args).then(res => {
+      return fetch(fetchUrl, ...args).then(res => {
         console.timeEnd(fetchId);
         return res;
       });
