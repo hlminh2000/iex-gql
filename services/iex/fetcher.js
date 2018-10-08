@@ -15,17 +15,18 @@ const iexRateLimit = RateLimit(50);
 
 const coinFlip = () => Math.random() > 1 / (iexProxies.length + 1);
 
-const iexFetch = async (url, ...args) => {
+const iexFetch = async (path, ...args) => {
   const usingProxy = coinFlip();
-  const fetchUrl = !usingProxy
-    ? url
-    : url.split(IEX_URL).join(pickProxies(iexProxies));
-  const fetchId = `${url}:::${Math.random()}${usingProxy ? ":::PROXY" : ""}`;
+  const pickedProxy = pickProxies(iexProxies);
+  const url = `${usingProxy ? pickedProxy : IEX_URL}${path}`;
+  const fetchId = `${path}___${Math.random()}${
+    usingProxy ? `___PROXY_${iexProxies.indexOf(pickedProxy)}` : ""
+  }`;
   console.time(fetchId);
   return retry(
     async bail => {
       await iexRateLimit();
-      return fetch(fetchUrl, ...args).then(res => {
+      return fetch(url, ...args).then(res => {
         console.timeEnd(fetchId);
         return res;
       });
