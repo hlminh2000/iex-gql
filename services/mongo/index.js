@@ -23,6 +23,9 @@ mongoose.connect(
   }
 );
 
+const randomBetween = (minimum, maximum) =>
+  Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+
 const createIexCacheManager = ({ cacheDays = 10 } = {}) => {
   let IexCache;
   try {
@@ -32,7 +35,10 @@ const createIexCacheManager = ({ cacheDays = 10 } = {}) => {
         {
           _id: String,
           path: { type: String, required: true },
-          expiry: { type: Date, default: () => addDays(Date.now(), cacheDays) },
+          expiry: {
+            type: Date,
+            default: () => addDays(Date.now(), randomBetween(1, 10))
+          },
           content: {}
         },
         { _id: false }
