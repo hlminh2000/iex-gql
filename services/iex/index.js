@@ -1,9 +1,7 @@
 const DataLoader = require("dataloader");
 const { iexFetch } = require("./fetcher");
-const { createIexCacheManager } = require("../mongo");
 
 const toUrl = ticker => encodeURI(ticker.toLowerCase());
-const cacheManager = createIexCacheManager();
 
 const createCompanyInfoLoader = () =>
   new DataLoader(tickers =>

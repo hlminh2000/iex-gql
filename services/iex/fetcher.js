@@ -16,6 +16,10 @@ const iexRateLimit = RateLimit(50);
 const coinFlip = () => Math.random() > 1 / (IEX_PROXIES.length + 1);
 
 const iexFetch = async (path, ...args) => {
+  const cached = await cacheManager.getCache({ path });
+  if (cached) {
+    return cached;
+  }
   const usingProxy = coinFlip();
   const pickedProxy = pickProxies(IEX_PROXIES);
   const url = `${usingProxy ? pickedProxy : IEX_URL}${path}`;

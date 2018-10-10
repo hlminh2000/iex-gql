@@ -62,37 +62,33 @@ const createIexCacheManager = ({ cacheDays = 10 } = {}) => {
                 console.log("err: ", err);
                 reject(err);
               } else {
-                console.log("doc: ", doc);
+                // console.log("doc: ", doc);
                 resolve(content);
               }
             }
           );
         } else {
-          console.log("doc: ", doc);
+          // console.log("doc: ", doc);
           resolve(content);
         }
       })
     );
   };
   const getCache = (
-    /** @type {{paths: Array<string>}}*/
-    { paths }
+    /** @type {{path: string}}*/
+    { path }
   ) =>
     new Promise((resolve, reject) =>
-      IexCache.find({
-        _id: {
-          $in: paths.map(path => new mongoose.Types.ObjectId(path))
-        },
-        expiry: {
-          $gt: Date.now()
-        }
-      }).exec((err, docs) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(docs);
-        }
-      })
+      IexCache.findById(path)
+        .where("expiry")
+        .gte(Date.now())
+        .exec((err, doc) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(doc ? doc.content : null);
+          }
+        })
     );
   return { saveCache, getCache };
 };
