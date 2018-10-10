@@ -1,14 +1,14 @@
 const DataLoader = require("dataloader");
 const { iexFetch } = require("./fetcher");
+const { createIexCacheManager } = require("../mongo");
 
 const toUrl = ticker => encodeURI(ticker.toLowerCase());
+const cacheManager = createIexCacheManager();
 
 const createCompanyInfoLoader = () =>
   new DataLoader(tickers =>
     Promise.all(
-      tickers.map(ticker =>
-        iexFetch(`/stock/${toUrl(ticker)}/company`).then(res => res.json())
-      )
+      tickers.map(ticker => iexFetch(`/stock/${toUrl(ticker)}/company`))
     )
   );
 
@@ -16,9 +16,9 @@ const createFinancialReportLoader = () =>
   new DataLoader(tickers =>
     Promise.all(
       tickers.map(ticker =>
-        iexFetch(`/stock/${toUrl(ticker)}/financials`)
-          .then(res => res.json())
-          .then(({ financials }) => financials)
+        iexFetch(`/stock/${toUrl(ticker)}/financials`).then(
+          ({ financials }) => financials
+        )
       )
     )
   );
@@ -26,9 +26,7 @@ const createFinancialReportLoader = () =>
 const createPeersLoader = () =>
   new DataLoader(tickers =>
     Promise.all(
-      tickers.map(ticker =>
-        iexFetch(`/stock/${toUrl(ticker)}/peers`).then(res => res.json())
-      )
+      tickers.map(ticker => iexFetch(`/stock/${toUrl(ticker)}/peers`))
     )
   );
 
@@ -38,7 +36,7 @@ const createSectorQuotesLoader = () =>
       sectors.map(sector =>
         iexFetch(
           `/stock/market/collection/sector?collectionName=${encodeURI(sector)}`
-        ).then(res => res.json())
+        )
       )
     )
   );
@@ -47,20 +45,14 @@ const createEarningsLoader = () =>
   new DataLoader(tickers =>
     Promise.all(
       tickers.map(ticker =>
-        iexFetch(`/stock/${ticker}/earnings`)
-          .then(res => res.json())
-          .then(({ earnings }) => earnings)
+        iexFetch(`/stock/${ticker}/earnings`).then(({ earnings }) => earnings)
       )
     )
   );
 
 const createStockStatsLoader = () =>
   new DataLoader(tickers =>
-    Promise.all(
-      tickers.map(ticker =>
-        iexFetch(`/stock/${ticker}/stats`).then(res => res.json())
-      )
-    )
+    Promise.all(tickers.map(ticker => iexFetch(`/stock/${ticker}/stats`)))
   );
 
 module.exports = {
