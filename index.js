@@ -1,11 +1,9 @@
 require("dotenv").config();
 const express = require("express");
 const createGqlServer = require("./graphql");
-
-const PORT = process.env.PORT || 4000;
+const { PORT } = require("./services/config");
 
 const GRAPHQL_PATH = "/graphql";
-
 const app = express();
 app.use(GRAPHQL_PATH, (req, res, next) => {
   req.setTimeout(0);

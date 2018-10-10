@@ -19,6 +19,7 @@
     "async-sema": "^2.1.4",
     "body-parser": "^1.18.3",
     "dataloader": "^1.4.0",
+    "date-fns": "^1.29.0",
     "dotenv": "^6.0.0",
     "express": "^4.16.3",
     "graphql": "^14.0.2",
@@ -27,6 +28,8 @@
     "graphql-tools": "^4.0.0",
     "isomorphic-fetch": "^2.2.1",
     "lodash": "^4.17.11",
+    "mongodb": "^3.1.6",
+    "mongoose": "^5.3.2",
     "nodemon": "^1.18.4"
   }
 }
